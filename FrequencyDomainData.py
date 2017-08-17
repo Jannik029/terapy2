@@ -6,7 +6,6 @@ from scipy import interpolate
 class FrequencyDomainData:
 
     def __init__(self, frequency_axis, amplitude, unwrapped_phase):
-
         self.axis = frequency_axis
         self.amplitude = amplitude
         self.phase = unwrapped_phase
@@ -98,4 +97,3 @@ class FrequencyDomainData:
             spectrum = self.amplitude / other.amplitude
             phase = self.phase - other.phase
             return FrequencyDomainData(self.axis, spectrum, phase)
-

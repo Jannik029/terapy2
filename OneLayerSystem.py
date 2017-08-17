@@ -5,17 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.constants import c
 from scipy.optimize import minimize
 from scipy import interpolate
-import csv
-import terapytools as tools
 import terapytools
-
-def save_n_to_csv(file, f, n):
-    with open(file, 'w') as csv_file:
-        writer = csv.writer(csv_file, delimiter=',')
-        i = 0
-        while i < len(f):
-            writer.writerow((str(f[i]), str(n[i].real), str(n[i].imag)))
-            i += 1
 
 
 def calculate_thickness(sample_data,
@@ -128,13 +118,12 @@ def calculate_thickness(sample_data,
             plt.plot(fit_thicknesses * 1e6, fit_function(fit_thicknesses))
 
     if method == 'qs':
+        raise Exception('Quasi space method is not implemented yet')
         if do_plot is True: plt.sca(no_ax)
         ns = []
         for d in thicknesses:
             ns.append(_calculate_n(d, transfer_function, no_pulses))
 
-        #for refractive_index in n:
-        #    plt.plot(transfer_function.axis, refractive_index)
         qs = []
         for n in ns:
             QSr = np.fft.fft(n.real - np.mean(n.real))
@@ -240,12 +229,6 @@ def calculate_n(sample_data,
             terapytools.ensure_dir(plot_output_path + '/')
             plt.savefig(plot_output_path)
 
-    #plt.figure()
-    #plt.plot(transfer_function.axis, n.real)
-
-    ########################################
-    # save_n_to_csv('n.csv', transfer_function.axis, n)
-    tools.save_n_to_txt('n.txt', transfer_function.axis, n)
     return transfer_function.axis, n
 
 
@@ -254,8 +237,6 @@ def calculate_n_approximate(omega, d, transfer_func):
     n = n_0 - c / (omega * d) * transfer_func.phase
     kappa = c / (omega * d) * \
                 (np.log(4 * n * n_0 / (n + n_0)**2) - np.log(np.absolute(transfer_func.amplitude)))
-    #plt.figure()
-    #plt.plot(transfer_func.axis, n)
     return n, -kappa
 
 
@@ -275,7 +256,11 @@ def _calculate_n(d, transfer_func, no_pulses):
     bounds = np.vstack((np.ones((len(n), 2)) * n_bound,
                         np.ones((len(n), 2)) * kappa_bound))
 
-    fres = minimize(minimize_me, n_init, args=(omega, transfer_func, d, no_pulses), bounds=bounds, options={'gtol': 1e-6, 'disp': False})
+    fres = minimize(minimize_me,
+                    n_init,
+                    args=(omega, transfer_func, d, no_pulses),
+                    bounds=bounds,
+                    options={'gtol': 1e-6, 'disp': False})
     n_total = fres.x
     n_t = n_total[:int(len(n_total) / 2)]
     n_k = n_total[int(len(n_total) / 2):]
@@ -286,6 +271,6 @@ def _calculate_n(d, transfer_func, no_pulses):
 def theo_transfer_func(omega, n, d, no_pulses):
     n0 = 1
     q = ((n0 - n) / (n0 + n) * np.exp(-1j * n * omega * d / c)) ** 2
-    FP = (q ** (no_pulses + 1) - 1) / (q - 1)
-    FP *= 4 * n0 * n / (n0 + n) ** 2 * np.exp(-1j * (n - n0) * omega * d / c)
-    return FP
+    fp = (q ** (no_pulses + 1) - 1) / (q - 1)
+    fp *= 4 * n0 * n / (n0 + n) ** 2 * np.exp(-1j * (n - n0) * omega * d / c)
+    return fp
